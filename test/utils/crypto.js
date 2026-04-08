@@ -62,12 +62,12 @@ const getChallengeRequestIdFromPublicKey = async (publicKeyBase64) => {
   return peerId.toBytes()
 }
 
-const getPlebbitAddressFromPrivateKey = async (privateKeyBase64) => {
+const getPkcAddressFromPrivateKey = async (privateKeyBase64) => {
   const peerId = await getPeerIdFromPrivateKey(privateKeyBase64)
   return peerId.toB58String().trim()
 }
 
-const getPlebbitAddressFromPublicKey = async (publicKeyBase64) => {
+const getPkcAddressFromPublicKey = async (publicKeyBase64) => {
   const peerId = await getPeerIdFromPublicKey(publicKeyBase64)
   return peerId.toB58String().trim()
 }
@@ -77,7 +77,7 @@ const generateSigner = async () => {
   return {
     privateKey,
     publicKey: await getPublicKeyFromPrivateKey(privateKey),
-    address: await getPlebbitAddressFromPrivateKey(privateKey),
+    address: await getPkcAddressFromPrivateKey(privateKey),
     type: 'ed25519',
   }
 }
@@ -88,8 +88,8 @@ export {
   getIpfsKeyFromPrivateKey,
   getPeerIdFromPrivateKey,
   getPeerIdFromPublicKey,
-  getPlebbitAddressFromPrivateKey,
-  getPlebbitAddressFromPublicKey,
+  getPkcAddressFromPrivateKey,
+  getPkcAddressFromPublicKey,
   getChallengeRequestIdFromPublicKey,
   generateSigner,
 }

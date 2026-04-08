@@ -19,10 +19,10 @@ const startMonitoring = async () => {
 
 // make sure only one instance is running in browser environments (Playwright)
 try {
-  if (!window.PLEBBIT_MONITOR_TEST_SERVER_STARTED) {
+  if (!window.PKC_MONITOR_TEST_SERVER_STARTED) {
     startMonitoring()
   }
-  window.PLEBBIT_MONITOR_TEST_SERVER_STARTED = true
+  window.PKC_MONITOR_TEST_SERVER_STARTED = true
 } catch (e) {}
 startMonitoring()
 

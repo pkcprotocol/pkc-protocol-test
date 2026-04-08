@@ -1,4 +1,4 @@
-This repo contains extra tests for `plebbit-js` (https://github.com/plebbit/plebbit-js) to ensure no protocol regression.
+This repo contains extra tests for `pkc-js` (https://github.com/pkcprotocol/pkc-js) to ensure no protocol regression.
 
 #### Install
 
@@ -20,8 +20,8 @@ This repo contains extra tests for `plebbit-js` (https://github.com/plebbit/pleb
 
 - `npm run test:browser`
 
-#### Tests with plebbit-js logs
+#### Tests with pkc-js logs
 
 ```
-DEBUG=plebbit-js:* npm run test
+DEBUG=pkc-js:* npm run test
 ```

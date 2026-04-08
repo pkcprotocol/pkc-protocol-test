@@ -1,5 +1,5 @@
 import {afterAll, beforeAll, describe} from 'vitest'
-import Plebbit from '@plebbit/plebbit-js'
+import PKC from '@pkc/pkc-js'
 
 // put node only tests here
 

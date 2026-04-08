@@ -1,7 +1,7 @@
-// script to start IPFS and plebbit-js for testing
+// script to start IPFS and pkc-js for testing
 
 ;(await import('util')).inspect.defaultOptions.depth = null
-import Plebbit from '@plebbit/plebbit-js'
+import PKC from '@pkc/pkc-js'
 import {directory as getTmpFolderPath} from 'tempy'
 import {startIpfs} from './start-ipfs.js'
 import {offlineIpfs, pubsubIpfs} from './ipfs-config.js'
@@ -9,21 +9,21 @@ import signers from '../fixtures/signers.js'
 import {ipfsKeyImport} from '../utils/ipfs.js'
 import http from 'http'
 
-// always use the same private key and subplebbit address when testing
+// always use the same private key and community address when testing
 const privateKey = signers[0].privateKey
-const plebbitDataPath = getTmpFolderPath()
+const pkcDataPath = getTmpFolderPath()
 
-// set up a subplebbit for testing
+// set up a community for testing
 ;(async () => {
   await startIpfs(offlineIpfs)
   await startIpfs(pubsubIpfs)
 
-  const plebbitOptions = {
+  const pkcOptions = {
     kuboRpcClientsOptions: [`http://127.0.0.1:${offlineIpfs.apiPort}/api/v0`],
     pubsubKuboRpcClientsOptions: [`http://127.0.0.1:${pubsubIpfs.apiPort}/api/v0`],
     httpRoutersOptions: [],
     // pubsubHttpClientOptions: `https://pubsubprovider.xyz/api/v0`,
-    dataPath: plebbitDataPath,
+    dataPath: pkcDataPath,
     publishInterval: 1000,
     updateInterval: 1000,
   }
@@ -34,50 +34,39 @@ const plebbitDataPath = getTmpFolderPath()
       // use the signer address as the key name to use in the tests
       keyName: signer.address,
       privateKey: signer.privateKey,
-      ipfsHttpUrl: plebbitOptions.kuboRpcClientsOptions[0],
+      ipfsHttpUrl: pkcOptions.kuboRpcClientsOptions[0],
     })
   }
 
-  const plebbit = await Plebbit(plebbitOptions)
-  plebbit.on('error', console.log)
-  const remotePlebbit = await Plebbit({...plebbitOptions, dataPath: undefined})
-  remotePlebbit.on('error', console.log)
-  const signer = await plebbit.createSigner({privateKey, type: 'ed25519'})
+  const pkc = await PKC(pkcOptions)
+  pkc.on('error', console.log)
+  const remotePkc = await PKC({...pkcOptions, dataPath: undefined})
+  remotePkc.on('error', console.log)
+  const signer = await pkc.createSigner({privateKey, type: 'ed25519'})
 
-  console.log(`creating subplebbit with address '${signer.address}'...`)
-  const subplebbit = await plebbit.createSubplebbit({
+  console.log(`creating community with address '${signer.address}'...`)
+  const community = await pkc.createCommunity({
     signer,
-    title: 'subplebbit title',
+    title: 'community title',
   })
-  subplebbit.on('challengerequest', console.log)
-  subplebbit.on('challengeanswer', console.log)
-  await subplebbit.edit({settings: {challenges: [{name: 'question', options: {question: '1+1=?', answer: '2'}}]}})
-  console.log('subplebbit created')
+  community.on('challengerequest', console.log)
+  community.on('challengeanswer', console.log)
+  await community.edit({settings: {challenges: [{name: 'question', options: {question: '1+1=?', answer: '2'}}]}})
+  console.log('community created')
 
-  console.log('starting subplebbit...')
-  await subplebbit.start()
-  subplebbit.once('update', async () => {
-    console.log(`subplebbit started with address ${signer.address}`)
+  console.log('starting community...')
+  await community.start()
+  community.once('update', async () => {
+    console.log(`community started with address ${signer.address}`)
 
     console.log('publish test comment')
-    const comment = await remotePlebbit.createComment({
+    const comment = await remotePkc.createComment({
       title: 'comment title',
       content: 'comment content',
-      subplebbitAddress: signer.address,
+      communityAddress: signer.address,
       signer,
-      author: {address: signer.address},
     })
     comment.once('challenge', () => comment.publishChallengeAnswers(['2']))
-
-    // uncomment to log an example of comment update
-    // comment.once('challengeverification', async (challengeVerification) => {
-    //   const commentCid = challengeVerification.publication.cid
-    //   console.log({commentCid})
-    //   const comment = await plebbit.getComment({cid: commentCid})
-    //   console.log({comment})
-    //   comment.on('update', console.log)
-    //   comment.update()
-    // })
 
     await comment.publish()
     console.log('test comment published')

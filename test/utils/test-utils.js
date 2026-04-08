@@ -1,7 +1,7 @@
 export const isCI = () => {
   let isCI = false
   try {
-    if (window.PLEBBIT_PROTOCOL_TEST_CI) {
+    if (window.PKC_PROTOCOL_TEST_CI) {
       isCI = true
     }
   } catch (e) {}

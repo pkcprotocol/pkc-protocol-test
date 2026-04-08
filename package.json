@@ -1,5 +1,5 @@
 {
-  "name": "plebbit-protocol-test",
+  "name": "pkc-protocol-test",
   "private": true,
   "license": "GPL-2.0",
   "version": "0.0.1",
@@ -10,19 +10,25 @@
     "test:browser": "npm run test:browser:chromium && npm run test:browser:firefox",
     "test:browser:chromium": "cross-env VITEST_BROWSER=chromium vitest --run --browser --config config/vitest.browser.config.js",
     "test:browser:firefox": "cross-env VITEST_BROWSER=firefox vitest --run --browser --config config/vitest.browser.config.js",
-    "test:server": "rm -rf .plebbit/ && node --es-module-specifier-resolution=node test/test-server",
+    "test:server": "rm -rf .pkc/ && node --es-module-specifier-resolution=node test/test-server",
     "test:server:wait-on": "wait-on http://localhost:59281 --timeout 120000",
     "prettier": "prettier {src,test,config}/**/*.{cjs,js,jsx,ts,tsx} --config config/prettier.config.js --write"
   },
   "dependencies": {
-    "@plebbit/plebbit-js": "file:../plebbit-js",
+    "@noble/ed25519": "^1.7.5",
+    "@pkc/pkc-js": "file:../pkc-js",
     "cborg": "1.9.6",
     "eslint": "8.4.1",
     "husky": "4.3.8",
     "kubo": "0.39.0",
+    "kubo-rpc-client": "^6.1.0",
+    "libp2p-crypto": "^0.21.2",
     "lint-staged": "12.3.8",
+    "node-forge": "^1.4.0",
+    "peer-id": "^0.16.0",
     "prettier": "3.2.5",
     "tempy": "1.0.1",
+    "uint8arrays": "^5.1.0",
     "wait-on": "6.0.1"
   },
   "lint-staged": {
