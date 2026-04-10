@@ -1,7 +1,7 @@
 {
   "name": "pkc-protocol-test",
   "private": true,
-  "license": "GPL-2.0",
+  "license": "GPL-3.0-or-later",
   "version": "0.0.1",
   "type": "module",
   "scripts": {
@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@noble/ed25519": "^1.7.5",
-    "@pkc/pkc-js": "github:pkcprotocol/pkc-js#542952a1a63211be218c31fe3dc256df2cdc6375",
+    "@pkcprotocol/pkc-js": "github:pkcprotocol/pkc-js#542952a1a63211be218c31fe3dc256df2cdc6375",
     "cborg": "1.9.6",
     "eslint": "8.4.1",
     "husky": "4.3.8",
