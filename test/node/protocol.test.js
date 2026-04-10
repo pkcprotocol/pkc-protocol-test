@@ -1,5 +1,5 @@
 import {afterAll, beforeAll, describe} from 'vitest'
-import PKC from '@pkc/pkc-js'
+import PKC from '@pkcprotocol/pkc-js'
 
 // put node only tests here
 
