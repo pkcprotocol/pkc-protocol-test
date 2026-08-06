@@ -1,7 +1,7 @@
 {
   "name": "pkc-protocol-test",
   "private": true,
-  "license": "GPL-2.0",
+  "license": "GPL-3.0-or-later",
   "version": "0.0.1",
   "type": "module",
   "scripts": {
