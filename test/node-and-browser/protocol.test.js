@@ -530,7 +530,7 @@ describe('protocol (node and browser)', () => {
     const pubsub = await pubsubSubscribe(communitySigner.address)
     comment.on('challenge', (challenge) => {
       console.log('challenge event')
-      comment.publishChallengeAnswers(['2']).catch(console.error)
+      comment.publishChallengeAnswers({ challengeAnswers: ['2'] }).catch(console.error)
     })
     const challengeVerificationPromise = new Promise((resolve) => {
       comment.on('challengeverification', (challengeVerification) => {
