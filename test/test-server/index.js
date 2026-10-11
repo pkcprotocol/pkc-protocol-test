@@ -1,7 +1,7 @@
 // script to start IPFS and pkc-js for testing
 
 ;(await import('util')).inspect.defaultOptions.depth = null
-import PKC from '@pkc/pkc-js'
+import PKC from '@pkcprotocol/pkc-js'
 import {directory as getTmpFolderPath} from 'tempy'
 import {startIpfs} from './start-ipfs.js'
 import {offlineIpfs, pubsubIpfs} from './ipfs-config.js'

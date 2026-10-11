@@ -13,7 +13,7 @@ try {
 import {afterAll, afterEach, beforeAll, beforeEach, describe, expect, it} from 'vitest'
 import {assertTestServerDidntCrash} from '../test-server/monitor-test-server.js'
 
-import PKC from '@pkc/pkc-js'
+import PKC from '@pkcprotocol/pkc-js'
 import * as cborg from 'cborg'
 import {create as CreateKuboRpcClient} from 'kubo-rpc-client'
 import {encryptEd25519AesGcm, decryptEd25519AesGcm} from '../utils/encryption.js'
