@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@noble/ed25519": "^1.7.5",
-    "@pkcprotocol/pkc-js": "github:pkcprotocol/pkc-js#d7bf2e0a8fd5f26e1d4ead27bbccea0085ea5873",
+    "@pkcprotocol/pkc-js": "github:pkcprotocol/pkc-js#a57bf281e7be2e1e833c4159ecdf06ef4d1e515b",
     "cborg": "1.9.6",
     "eslint": "8.4.1",
     "husky": "4.3.8",

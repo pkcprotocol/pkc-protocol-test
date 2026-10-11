@@ -66,7 +66,7 @@ const pkcDataPath = getTmpFolderPath()
       communityAddress: signer.address,
       signer,
     })
-    comment.once('challenge', () => comment.publishChallengeAnswers(['2']))
+    comment.once('challenge', () => comment.publishChallengeAnswers({ challengeAnswers: ['2'] }))
 
     await comment.publish()
     console.log('test comment published')
