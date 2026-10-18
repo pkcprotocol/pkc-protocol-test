@@ -25,3 +25,5 @@ This repo contains extra tests for `pkc-js` (https://github.com/pkcprotocol/pkc-
 ```
 DEBUG=pkc-js:* npm run test
 ```
+
+<!-- review bots smoke test, safe to close -->
