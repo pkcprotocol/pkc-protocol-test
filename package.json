@@ -29,7 +29,7 @@
     "prettier": "3.2.5",
     "tempy": "1.0.1",
     "uint8arrays": "^5.1.0",
-    "wait-on": "6.0.1"
+    "wait-on": "7.2.0"
   },
   "lint-staged": {
     "{src,test,config}/**/*.{cjs,js,jsx,ts,tsx}": [
@@ -42,10 +42,17 @@
     }
   },
   "devDependencies": {
-    "@vitest/browser": "3.2.7",
+    "@vitest/browser-playwright": "4.1.12",
     "cross-env": "7.0.3",
     "playwright": "1.55.1",
     "vite": "7.3.7",
-    "vitest": "3.2.7"
+    "vitest": "4.1.12"
+  },
+  "overrides": {
+    "probe-image-size": "7.4.0",
+    "protobufjs@6": "7.6.6",
+    "undici@7": "7.29.1",
+    "uuid@13": "13.0.1",
+    "ws@8": "8.21.0"
   }
 }

@@ -1,4 +1,5 @@
 import {defineConfig} from 'vitest/config'
+import {playwright} from '@vitest/browser-playwright'
 
 const mochaTimeout = 120000
 
@@ -6,15 +7,16 @@ export default defineConfig({
   test: {
     browser: {
       enabled: true,
-      provider: 'playwright',
+      provider: playwright({
+        launchOptions: {
+          args: process.env.VITEST_BROWSER === 'firefox' ? [] : ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-web-security'],
+        },
+      }),
       headless: true,
       screenshotFailures: false,
       instances: [
         {
           browser: process.env.VITEST_BROWSER === 'firefox' ? 'firefox' : 'chromium',
-          launch: {
-            args: process.env.VITEST_BROWSER === 'firefox' ? [] : ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-web-security'],
-          },
         },
       ],
     },
