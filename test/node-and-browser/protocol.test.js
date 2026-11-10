@@ -332,6 +332,8 @@ describe('protocol (node and browser)', () => {
     const authorSigner = signers[5]
     const pubsubMessageSigner = await generateSigner()
 
+    expect(publishedCommentCid).to.not.equal(undefined, 'publishedCommentCid gets defined in a previous test, cannot run in .only mode')
+
     // create reply
     const reply = {
       parentCid: publishedCommentCid,
@@ -530,7 +532,7 @@ describe('protocol (node and browser)', () => {
     const pubsub = await pubsubSubscribe(communitySigner.address)
     comment.on('challenge', (challenge) => {
       console.log('challenge event')
-      comment.publishChallengeAnswers({ challengeAnswers: ['2'] }).catch(console.error)
+      comment.publishChallengeAnswers({challengeAnswers: ['2']}).catch(console.error)
     })
     const challengeVerificationPromise = new Promise((resolve) => {
       comment.on('challengeverification', (challengeVerification) => {
