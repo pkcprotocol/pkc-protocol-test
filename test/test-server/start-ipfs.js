@@ -1,11 +1,18 @@
 // script to start IPFS and pkc-js for testing
 
-import {exec, execSync} from 'child_process'
+import {execSync, spawn} from 'child_process'
 import {directory as getTmpFolderPath} from 'tempy'
 import {path as ipfsPathFunc} from 'kubo'
 import assert from 'assert'
+import os from 'os'
 
 const ipfsPath = ipfsPathFunc()
+
+// SIGINT and SIGTERM don't emit 'exit', exit explicitly so the 'exit' handlers below stop the ipfs daemons
+for (const signal of ['SIGINT', 'SIGTERM']) {
+  process.on(signal, () => process.exit(128 + os.constants.signals[signal]))
+}
+
 export const startIpfs = ({apiPort, gatewayPort, args = ''} = {}) => {
   assert.equal(typeof apiPort, 'number')
   assert.equal(typeof gatewayPort, 'number')
@@ -30,9 +37,12 @@ export const startIpfs = ({apiPort, gatewayPort, args = ''} = {}) => {
     stdio: 'inherit',
   })
 
-  // start ipfs daemon
-  const ipfsProcess = exec(`IPFS_PATH=${ipfsDataPath} ${ipfsPath} daemon ${args}`)
-  console.log(`IPFS_PATH=${ipfsDataPath} ${ipfsPath} daemon ${args} process started with pid ${ipfsProcess.pid}`)
+  // start ipfs daemon, without a shell so ipfsProcess.pid is the daemon's pid
+  const ipfsArgs = ['daemon', ...args.split(' ').filter(Boolean)]
+  const ipfsProcess = spawn(ipfsPath, ipfsArgs, {env: {...process.env, IPFS_PATH: ipfsDataPath}})
+  ipfsProcess.stdout.setEncoding('utf8')
+  ipfsProcess.stderr.setEncoding('utf8')
+  console.log(`IPFS_PATH=${ipfsDataPath} ${ipfsPath} ${ipfsArgs.join(' ')} process started with pid ${ipfsProcess.pid}`)
   ipfsProcess.stderr.on('data', console.error)
   ipfsProcess.stdin.on('data', console.log)
   ipfsProcess.stdout.on('data', console.log)
@@ -42,7 +52,7 @@ export const startIpfs = ({apiPort, gatewayPort, args = ''} = {}) => {
     process.exit(1)
   })
   process.on('exit', () => {
-    exec(`kill ${ipfsProcess.pid + 1}`)
+    ipfsProcess.kill()
   })
 
   const ipfsDaemonIsReady = () =>
