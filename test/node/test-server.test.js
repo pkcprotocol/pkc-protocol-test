@@ -57,17 +57,22 @@ const startIpfsInChildProcess = async ({exitWhenReady = false} = {}) => {
   started.push(handle)
 
   let output = ''
+  let stdout = ''
   await new Promise((resolve, reject) => {
     const timeout = setTimeout(() => reject(Error(`startIpfs didn't resolve in the child process, output:\n${output}`)), 60000)
     const onData = (data) => {
       output += data
-      handle.daemonPid ??= Number(output.match(/process started with pid (\d+)/)?.[1]) || undefined
       if (output.includes('startIpfs resolved')) {
         clearTimeout(timeout)
         resolve()
       }
     }
-    child.stdout.on('data', onData)
+    child.stdout.on('data', (data) => {
+      // only read the pid from a complete stdout line, a chunk can end in the middle of the pid
+      stdout += data
+      handle.daemonPid ??= Number(stdout.match(/process started with pid (\d+)\n/)?.[1]) || undefined
+      onData(data)
+    })
     child.stderr.on('data', onData)
     childExited.then(() => {
       clearTimeout(timeout)
