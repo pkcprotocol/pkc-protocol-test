@@ -33,7 +33,12 @@ const stopIpfsDaemonsAndExit = async (exitCode) => {
 for (const signal of ['SIGINT', 'SIGTERM']) {
   process.on(signal, () => stopIpfsDaemonsAndExit(128 + os.constants.signals[signal]))
 }
-// 'exit' handlers can't wait, so on any other exit (e.g. an uncaught error) only signal the daemons, they stop
+// an uncaught error (also an unhandled rejection) would exit right away, report it and exit once the daemons exited
+process.on('uncaughtException', (error) => {
+  console.error(error)
+  stopIpfsDaemonsAndExit(1)
+})
+// 'exit' handlers can't wait, so on any other exit (e.g. process.exit) only signal the daemons, they stop
 // gracefully once this process and its api requests are gone
 process.on('exit', () => {
   for (const ipfsProcess of ipfsProcesses) {

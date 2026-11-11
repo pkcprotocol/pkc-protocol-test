@@ -39,8 +39,9 @@ const waitForProcessToStop = async (pid, timeout = 20000) => {
 
 const started = []
 
-// start offline ipfs daemons with startIpfs in a child node process, like test/test-server/index.js does
-const startIpfsInChildProcess = async ({daemons = 1, exitWhenReady = false} = {}) => {
+// start offline ipfs daemons with startIpfs in a child node process, like test/test-server/index.js does,
+// then run whenReady in it
+const startIpfsInChildProcess = async ({daemons = 1, whenReady = 'setInterval(() => {}, 1000)'} = {}) => {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pkc-protocol-test-start-ipfs-'))
   const ports = []
   for (let i = 0; i < daemons; i++) {
@@ -55,15 +56,15 @@ const startIpfsInChildProcess = async ({daemons = 1, exitWhenReady = false} = {}
       await new Promise((resolve) => http.request({host: '127.0.0.1', port: apiPort, path: '/api/v0/log/tail', method: 'POST'}).on('error', () => {}).on('finish', resolve).end())
     }
     console.log('startIpfs resolved')
-    ${exitWhenReady ? 'process.exit(0)' : 'setInterval(() => {}, 1000)'}
+    ${whenReady}
   `
   const child = spawn(process.execPath, ['--input-type=module', '-e', script], {env: {...process.env, TMPDIR: tmpDir}})
   // 'close' fires after the child exited and its output was read
   const childExited = new Promise((resolve) => child.once('close', (code, signal) => resolve({code, signal})))
-  const handle = {child, childExited, tmpDir, daemonPids: []}
+  let output = ''
+  const handle = {child, childExited, tmpDir, daemonPids: [], getOutput: () => output}
   started.push(handle)
 
-  let output = ''
   let stdout = ''
   await new Promise((resolve, reject) => {
     const timeout = setTimeout(() => reject(Error(`startIpfs didn't resolve in the child process, output:\n${output}`)), 60000)
@@ -135,9 +136,27 @@ describe('test server (node)', () => {
     expect(isProcessRunning(otherDaemonPid)).to.equal(false, `ipfs daemon pid ${otherDaemonPid} still running after the test server exited`)
   })
 
+  // test/test-server/index.js has no catch, so a failed startup step is an unhandled rejection
+  const fatalErrors = {
+    'uncaught exception': "setTimeout(() => { throw Error('fatal test server error') })",
+    'unhandled rejection': "Promise.reject(Error('fatal test server error'))",
+  }
+  for (const [fatalError, whenReady] of Object.entries(fatalErrors)) {
+    it(`stops the ipfs daemons before exiting when the test server has an ${fatalError}`, async () => {
+      const {childExited, daemonPids, getOutput} = await startIpfsInChildProcess({daemons: 2, whenReady})
+      const readyAt = Date.now()
+      expect(await childExited).to.deep.equal({code: 1, signal: null})
+      expect(Date.now() - readyAt).to.be.below(5000, `test server took too long to exit on an ${fatalError}`)
+      expect(getOutput()).to.include('fatal test server error')
+      for (const daemonPid of daemonPids) {
+        expect(isProcessRunning(daemonPid)).to.equal(false, `ipfs daemon pid ${daemonPid} still running after the test server exited on an ${fatalError}`)
+      }
+    })
+  }
+
   // 'exit' handlers can't wait, so on process.exit the daemon is only signaled
   it('stops the ipfs daemon when the test server exits', async () => {
-    const {childExited, daemonPids} = await startIpfsInChildProcess({exitWhenReady: true})
+    const {childExited, daemonPids} = await startIpfsInChildProcess({whenReady: 'process.exit(0)'})
     const [daemonPid] = daemonPids
 
     await childExited
