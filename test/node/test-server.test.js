@@ -39,21 +39,28 @@ const waitForProcessToStop = async (pid, timeout = 20000) => {
 
 const started = []
 
-// start an offline ipfs daemon with startIpfs in a child node process, like test/test-server/index.js does
-const startIpfsInChildProcess = async ({exitWhenReady = false} = {}) => {
+// start offline ipfs daemons with startIpfs in a child node process, like test/test-server/index.js does
+const startIpfsInChildProcess = async ({daemons = 1, exitWhenReady = false} = {}) => {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pkc-protocol-test-start-ipfs-'))
-  const apiPort = await getFreePort()
-  const gatewayPort = await getFreePort()
+  const ports = []
+  for (let i = 0; i < daemons; i++) {
+    ports.push({apiPort: await getFreePort(), gatewayPort: await getFreePort()})
+  }
   const script = `
+    const http = await import('http')
     const {startIpfs} = await import(${JSON.stringify(startIpfsUrl)})
-    await startIpfs({apiPort: ${apiPort}, gatewayPort: ${gatewayPort}, args: '--offline'})
+    for (const {apiPort, gatewayPort} of ${JSON.stringify(ports)}) {
+      await startIpfs({apiPort, gatewayPort, args: '--offline'})
+      // keep a streaming api request open, like the pubsub subscriptions of pkc-js in the test server
+      await new Promise((resolve) => http.request({host: '127.0.0.1', port: apiPort, path: '/api/v0/log/tail', method: 'POST'}).on('error', () => {}).on('finish', resolve).end())
+    }
     console.log('startIpfs resolved')
     ${exitWhenReady ? 'process.exit(0)' : 'setInterval(() => {}, 1000)'}
   `
   const child = spawn(process.execPath, ['--input-type=module', '-e', script], {env: {...process.env, TMPDIR: tmpDir}})
   // 'close' fires after the child exited and its output was read
   const childExited = new Promise((resolve) => child.once('close', (code, signal) => resolve({code, signal})))
-  const handle = {child, childExited, tmpDir, daemonPid: undefined}
+  const handle = {child, childExited, tmpDir, daemonPids: []}
   started.push(handle)
 
   let output = ''
@@ -68,9 +75,9 @@ const startIpfsInChildProcess = async ({exitWhenReady = false} = {}) => {
       }
     }
     child.stdout.on('data', (data) => {
-      // only read the pid from a complete stdout line, a chunk can end in the middle of the pid
+      // only read pids from complete stdout lines, a chunk can end in the middle of a pid
       stdout += data
-      handle.daemonPid ??= Number(stdout.match(/process started with pid (\d+)\n/)?.[1]) || undefined
+      handle.daemonPids = [...stdout.matchAll(/process started with pid (\d+)\n/g)].map((match) => Number(match[1]))
       onData(data)
     })
     child.stderr.on('data', onData)
@@ -79,36 +86,59 @@ const startIpfsInChildProcess = async ({exitWhenReady = false} = {}) => {
       output.includes('startIpfs resolved') ? resolve() : reject(Error(`child process exited before startIpfs resolved, output:\n${output}`))
     })
   })
-  expect(handle.daemonPid).to.be.a('number')
+  expect(handle.daemonPids).to.have.length(daemons)
   return handle
 }
 
 describe('test server (node)', () => {
   afterEach(async () => {
     // never leave a daemon running, even when a test fails
-    for (const {child, daemonPid, tmpDir} of started.splice(0)) {
+    for (const {child, daemonPids, tmpDir} of started.splice(0)) {
       child.kill('SIGKILL')
-      if (daemonPid && isProcessRunning(daemonPid)) {
-        process.kill(daemonPid, 'SIGKILL')
-        await waitForProcessToStop(daemonPid)
+      for (const daemonPid of daemonPids) {
+        if (isProcessRunning(daemonPid)) {
+          process.kill(daemonPid, 'SIGKILL')
+          await waitForProcessToStop(daemonPid)
+        }
       }
       fs.rmSync(tmpDir, {recursive: true, force: true})
     }
   })
 
+  // the daemons must be gone when the test server is gone, so a test server started right after can bind their ports
   for (const signal of ['SIGTERM', 'SIGINT']) {
-    it(`stops the ipfs daemon when the test server gets ${signal}`, async () => {
-      const {child, childExited, daemonPid} = await startIpfsInChildProcess()
-      expect(isProcessRunning(daemonPid)).to.equal(true)
+    it(`stops the ipfs daemons before exiting when the test server gets ${signal}`, async () => {
+      const {child, childExited, daemonPids} = await startIpfsInChildProcess({daemons: 2})
+      for (const daemonPid of daemonPids) {
+        expect(isProcessRunning(daemonPid)).to.equal(true)
+      }
 
+      const signaledAt = Date.now()
       child.kill(signal)
-      await childExited
-      expect(await waitForProcessToStop(daemonPid)).to.equal(true, `ipfs daemon pid ${daemonPid} still running after the test server got ${signal}`)
+      expect(await childExited).to.deep.equal({code: 128 + os.constants.signals[signal], signal: null})
+      // kubo's graceful shutdown waits for open api requests, so the test server must not wait for it
+      expect(Date.now() - signaledAt).to.be.below(5000, `test server took too long to exit on ${signal}`)
+      for (const daemonPid of daemonPids) {
+        expect(isProcessRunning(daemonPid)).to.equal(false, `ipfs daemon pid ${daemonPid} still running after the test server exited on ${signal}`)
+      }
     })
   }
 
+  it('stops the other ipfs daemon before exiting when an ipfs daemon exits', async () => {
+    const {childExited, daemonPids} = await startIpfsInChildProcess({daemons: 2})
+    const [exitedDaemonPid, otherDaemonPid] = daemonPids
+
+    const killedAt = Date.now()
+    process.kill(exitedDaemonPid, 'SIGKILL')
+    expect(await childExited).to.deep.equal({code: 1, signal: null})
+    expect(Date.now() - killedAt).to.be.below(5000, 'test server took too long to exit after an ipfs daemon exited')
+    expect(isProcessRunning(otherDaemonPid)).to.equal(false, `ipfs daemon pid ${otherDaemonPid} still running after the test server exited`)
+  })
+
+  // 'exit' handlers can't wait, so on process.exit the daemon is only signaled
   it('stops the ipfs daemon when the test server exits', async () => {
-    const {childExited, daemonPid} = await startIpfsInChildProcess({exitWhenReady: true})
+    const {childExited, daemonPids} = await startIpfsInChildProcess({exitWhenReady: true})
+    const [daemonPid] = daemonPids
 
     await childExited
     expect(await waitForProcessToStop(daemonPid)).to.equal(true, `ipfs daemon pid ${daemonPid} still running after the test server exited`)
