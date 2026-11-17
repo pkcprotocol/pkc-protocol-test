@@ -132,8 +132,8 @@ describe('protocol (node and browser)', () => {
     console.log({challenges})
 
     // validate challenge pubsub message
-    expect(challenges[0].challenge).to.equal('1+1=?')
-    expect(challenges[0].type).to.equal('text/plain')
+    expect(challenges['0'].challenge).to.equal('1+1=?')
+    expect(challenges['0'].type).to.equal('text/plain')
     expect(challengePubsubMessage.type).to.equal('CHALLENGE')
     expect(challengePubsubMessage.encrypted.type).to.equal('ed25519-aes-gcm')
     expect(challengePubsubMessage.challengeRequestId.toString()).to.equal(challengeRequestPubsubMessage.challengeRequestId.toString())
@@ -152,7 +152,7 @@ describe('protocol (node and browser)', () => {
     ).to.equal(true)
 
     // create pubsub challenge answer message
-    const challengeAnswers = ['2']
+    const challengeAnswers = {'0': '2'}
     const encryptedChallengeAnswers = await encryptEd25519AesGcm(JSON.stringify({challengeAnswers}), pubsubMessageSigner.privateKey, communitySigner.publicKey)
     const challengeAnswerPubsubMessage = {
       type: 'CHALLENGEANSWER',
@@ -397,7 +397,7 @@ describe('protocol (node and browser)', () => {
     console.log({challenges})
 
     // create pubsub challenge answer message
-    const challengeAnswers = ['2']
+    const challengeAnswers = {'0': '2'}
     const encryptedChallengeAnswers = await encryptEd25519AesGcm(JSON.stringify({challengeAnswers}), pubsubMessageSigner.privateKey, communitySigner.publicKey)
     const challengeAnswerPubsubMessage = {
       type: 'CHALLENGEANSWER',
@@ -530,7 +530,7 @@ describe('protocol (node and browser)', () => {
     const pubsub = await pubsubSubscribe(communitySigner.address)
     comment.on('challenge', (challenge) => {
       console.log('challenge event')
-      comment.publishChallengeAnswers({ challengeAnswers: ['2'] }).catch(console.error)
+      comment.publishChallengeAnswers({ challengeAnswers: {'0': '2'} }).catch(console.error)
     })
     const challengeVerificationPromise = new Promise((resolve) => {
       comment.on('challengeverification', (challengeVerification) => {
@@ -598,7 +598,7 @@ describe('protocol (node and browser)', () => {
     ).to.equal(true)
 
     // create challenge pusub message
-    const challenges = [{challenge: '1+1=?', type: 'text'}]
+    const challenges = {'0': {challenge: '1+1=?', type: 'text'}}
     const encryptedChallenges = await encryptEd25519AesGcm(
       JSON.stringify({challenges}),
       communitySigner.privateKey,
@@ -646,7 +646,7 @@ describe('protocol (node and browser)', () => {
     expect(challengeAnswerPubsubMessage.encrypted.type).to.equal('ed25519-aes-gcm')
     expect(challengeAnswerPubsubMessage.challengeRequestId.toString()).to.equal(challengeRequestPubsubMessage.challengeRequestId.toString())
     expect(challengeAnswerPubsubMessage.challengeAnswerId).to.equal(undefined)
-    expect(challengeAnswerPubsubMessage.challengeAnswers).to.deep.equal(['2'])
+    expect(challengeAnswerPubsubMessage.challengeAnswers).to.deep.equal({'0': '2'})
 
     // validate challenge answer pubsub message signature
     expect(challengeAnswerPubsubMessage.signature.type).to.equal('ed25519')
@@ -896,8 +896,8 @@ describe('protocol (node and browser)', () => {
     console.log({challenges})
 
     // validate challenge pubsub message
-    expect(challenges[0].challenge).to.equal('1+1=?')
-    expect(challenges[0].type).to.equal('text/plain')
+    expect(challenges['0'].challenge).to.equal('1+1=?')
+    expect(challenges['0'].type).to.equal('text/plain')
     expect(challengePubsubMessage.type).to.equal('CHALLENGE')
     expect(challengePubsubMessage.encrypted.type).to.equal('ed25519-aes-gcm')
     expect(challengePubsubMessage.challengeRequestId.toString()).to.equal(challengeRequestPubsubMessage.challengeRequestId.toString())
@@ -916,7 +916,7 @@ describe('protocol (node and browser)', () => {
     ).to.equal(true)
 
     // create pubsub challenge answer message
-    const challengeAnswers = ['2']
+    const challengeAnswers = {'0': '2'}
     const encryptedChallengeAnswers = await encryptEd25519AesGcm(JSON.stringify({challengeAnswers}), pubsubMessageSigner.privateKey, communitySigner.publicKey)
     const challengeAnswerPubsubMessage = {
       type: 'CHALLENGEANSWER',
@@ -1053,8 +1053,8 @@ describe('protocol (node and browser)', () => {
     console.log({challenges})
 
     // validate challenge pubsub message
-    expect(challenges[0].challenge).to.equal('1+1=?')
-    expect(challenges[0].type).to.equal('text/plain')
+    expect(challenges['0'].challenge).to.equal('1+1=?')
+    expect(challenges['0'].type).to.equal('text/plain')
     expect(challengePubsubMessage.type).to.equal('CHALLENGE')
     expect(challengePubsubMessage.encrypted.type).to.equal('ed25519-aes-gcm')
     expect(challengePubsubMessage.challengeRequestId.toString()).to.equal(challengeRequestPubsubMessage.challengeRequestId.toString())
@@ -1073,7 +1073,7 @@ describe('protocol (node and browser)', () => {
     ).to.equal(true)
 
     // create pubsub challenge answer message
-    const challengeAnswers = ['2']
+    const challengeAnswers = {'0': '2'}
     const encryptedChallengeAnswers = await encryptEd25519AesGcm(JSON.stringify({challengeAnswers}), pubsubMessageSigner.privateKey, communitySigner.publicKey)
     const challengeAnswerPubsubMessage = {
       type: 'CHALLENGEANSWER',
