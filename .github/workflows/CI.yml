@@ -33,7 +33,7 @@ jobs:
           - ubuntu-24.04
           # - macOS-latest
         node_version:
-          - 18
+          - 22
 
     steps:
       - uses: actions/checkout@v4
@@ -41,7 +41,50 @@ jobs:
         with:
           node-version: ${{ matrix.node_version }}
 
-      - run: npm ci
+      # Node 22 bundles npm 10.9.x, whose arborist crashes on the local-folder install below
+      # ("Cannot read properties of null (reading 'edgesOut')"); npm 11 does not.
+      - run: npm i -g npm@11.13.0
+
+      # pkc-js does not commit dist/ and its `prepare` script only runs husky, so the git dependency pinned in
+      # package.json installs without a build and the test server cannot import it
+      # (ERR_MODULE_NOT_FOUND .../dist/bundled/index-with-compile-cache.js). Build the pinned commit instead
+      # and install that folder over the git copy.
+      - name: build the pkc-js commit pinned in package.json
+        shell: bash
+        run: |
+          PKC_JS_REF=$(jq -r '.dependencies["@pkcprotocol/pkc-js"]' package.json | cut -d'#' -f2)
+          echo "building pkc-js $PKC_JS_REF"
+          git clone https://github.com/pkcprotocol/pkc-js.git ../pkc-js
+          git -C ../pkc-js checkout "$PKC_JS_REF"
+          cd ../pkc-js
+          # The kubo postinstall downloads a binary and has no retry of its own
+          for attempt in 1 2 3; do
+            npm ci && break
+            if [ "$attempt" = 3 ]; then exit 1; fi
+            echo "npm ci attempt $attempt failed; retrying in 15s..."
+            sleep 15
+          done
+          npm run build
+          rm -rf node_modules
+
+      - name: npm ci (with retry)
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            npm ci && exit 0
+            echo "npm ci attempt $attempt failed; retrying in 15s..."
+            sleep 15
+          done
+          exit 1
+      - name: install the built pkc-js over the git copy
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            npm i --no-save ../pkc-js && exit 0
+            echo "npm i ../pkc-js attempt $attempt failed; retrying in 15s..."
+            sleep 15
+          done
+          exit 1
       - run: npx playwright install --with-deps chromium firefox
 
       # disable hosts we shouldn't use
