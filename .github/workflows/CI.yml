@@ -29,7 +29,8 @@ jobs:
     strategy:
       matrix:
         os:
-          - ubuntu-latest
+          # pinned: ubuntu-latest is now 26.04, where playwright refuses to install browsers
+          - ubuntu-24.04
           # - macOS-latest
         node_version:
           - 18
